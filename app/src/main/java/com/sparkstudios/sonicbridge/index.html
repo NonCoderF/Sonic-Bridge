@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>TV Audio Receiver</title>
+
+    <style>
+
+        body{
+            background:#181818;
+            color:white;
+            font-family:Arial;
+            margin:30px;
+        }
+
+        button{
+            padding:12px 25px;
+            font-size:18px;
+        }
+
+        #status{
+            margin-top:20px;
+            font-size:20px;
+        }
+
+        #stats{
+            margin-top:10px;
+        }
+
+        #log{
+            margin-top:20px;
+            height:250px;
+            overflow:auto;
+            background:#101010;
+            padding:10px;
+            white-space:pre-wrap;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<h2>TV Audio Receiver</h2>
+
+<button id="connectBtn">
+
+    Connect
+
+</button>
+
+<div id="status">
+
+    Disconnected
+
+</div>
+
+<div id="stats">
+
+    Received : 0 KB
+
+</div>
+
+<pre id="log"></pre>
+
+<script>
+
+    const SAMPLE_RATE = 48000;
+    const CHANNELS = 2;
+
+    let audioContext;
+    let worklet;
+    let socket;
+
+    let receivedBytes = 0;
+
+    const statusView =
+    document.getElementById("status");
+
+    const statsView =
+    document.getElementById("stats");
+
+    const logView =
+    document.getElementById("log");
+
+    function log(text){
+
+        console.log(text);
+
+        logView.textContent += text + "\n";
+
+        logView.scrollTop =
+            logView.scrollHeight;
+
+    }
+
+    async function startAudio(){
+
+        audioContext =
+            new AudioContext({
+
+                sampleRate:SAMPLE_RATE,
+
+                latencyHint:"interactive"
+
+            });
+
+        await audioContext.audioWorklet.addModule(
+            "pcm-player.js"
+        );
+
+        worklet =
+            new AudioWorkletNode(
+
+                audioContext,
+
+                "pcm-player",
+
+                {
+
+                    numberOfInputs:0,
+
+                    numberOfOutputs:1,
+
+                    outputChannelCount:[CHANNELS]
+
+                }
+
+            );
+
+        worklet.connect(
+            audioContext.destination
+        );
+
+        await audioContext.resume();
+
+        log("AudioContext Sample Rate : "
+            + audioContext.sampleRate);
+
+    }
+
+    async function connect(){
+
+        await startAudio();
+
+        socket =
+            new WebSocket(
+                "ws://192.168.1.16:8080/audio"
+            );
+
+        socket.binaryType =
+            "arraybuffer";
+
+        socket.onopen = ()=>{
+
+            statusView.innerHTML =
+                "Connected";
+
+            log("WebSocket Connected");
+
+        };
+
+        socket.onclose = ()=>{
+
+            statusView.innerHTML =
+                "Disconnected";
+
+            log("Socket Closed");
+
+        };
+
+        socket.onerror = (e)=>{
+
+            console.error(e);
+
+            log("Socket Error");
+
+        };
+
+        socket.onmessage = (event)=>{
+
+            receivedBytes +=
+                event.data.byteLength;
+
+            statsView.innerHTML =
+                "Received : "
+                + (receivedBytes/1024/1024).toFixed(2)
+                + " MB";
+
+            worklet.port.postMessage(
+                event.data,
+                [event.data]
+            );
+
+        };
+
+    }
+
+    document
+    .getElementById("connectBtn")
+    .onclick = connect;
+
+</script>
+
+</body>
+
+</html>
