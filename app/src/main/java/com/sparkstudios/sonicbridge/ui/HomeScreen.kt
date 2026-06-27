@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +30,9 @@ fun HomeScreen(
 
     uiState: HomeUiState,
 
-    onConnectClick: () -> Unit
+    onConnectClick: () -> Unit,
+
+    onChangeTv: () -> Unit
 
 ) {
 
@@ -91,7 +94,24 @@ fun HomeScreen(
 
             )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+
+            TextButton(
+
+                onClick = onChangeTv,
+
+                contentPadding = PaddingValues(0.dp)
+
+            ) {
+
+                Text(
+                    text = "Change TV",
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
 
             Text(
 

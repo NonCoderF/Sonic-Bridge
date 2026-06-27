@@ -4,15 +4,17 @@ import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.*
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sparkstudios.sonicbridge.data.Prefs
 import com.sparkstudios.sonicbridge.service.AudioPlaybackService
 import com.sparkstudios.sonicbridge.ui.HomeScreen
+import com.sparkstudios.sonicbridge.ui.IpSetupScreen
 import com.sparkstudios.sonicbridge.ui.MainViewModel
 import com.sparkstudios.sonicbridge.ui.theme.SonicBridgeTheme
 
@@ -32,32 +34,64 @@ class MainActivity : ComponentActivity() {
 
             SonicBridgeTheme {
 
-                val uiState =
-                    viewModel.uiState.collectAsStateWithLifecycle()
+                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-                HomeScreen(
+                var tvIp by remember {
 
-                    uiState = uiState.value,
+                    mutableStateOf(
+                        Prefs.getTvIp(this)
+                    )
 
-                    onConnectClick = {
+                }
 
-                        if (uiState.value.isConnected) {
+                if (tvIp.isBlank()) {
 
-                            stopReceiver()
+                    IpSetupScreen(
 
+                        onContinue = { ip ->
 
-                        } else {
+                            Prefs.saveTvIp(
+                                this,
+                                ip
+                            )
 
-                            Log.e("TAG", "Came up here")
-
-                            startReceiver()
-
+                            tvIp = ip
 
                         }
 
-                    }
+                    )
 
-                )
+                } else {
+
+                    HomeScreen(
+
+                        uiState = uiState,
+
+                        onConnectClick = {
+
+                            if (uiState.isConnected) {
+
+                                stopReceiver()
+
+                            } else {
+
+                                startReceiver(tvIp)
+
+                            }
+
+                        },
+
+                        onChangeTv = {
+
+                            Prefs.clearTvIp(this)
+
+                            tvIp = ""
+
+                        }
+
+                    )
+
+                }
 
             }
 
@@ -65,21 +99,23 @@ class MainActivity : ComponentActivity() {
 
     }
 
-    private fun startReceiver() {
+    private fun startReceiver(ip: String) {
 
-        val intent = Intent(
-            this,
-            AudioPlaybackService::class.java
-        ).apply {
+        val intent =
+            Intent(
+                this,
+                AudioPlaybackService::class.java
+            ).apply {
 
-            action = AudioPlaybackService.ACTION_CONNECT
+                action =
+                    AudioPlaybackService.ACTION_CONNECT
 
-            putExtra(
-                AudioPlaybackService.EXTRA_IP,
-                "192.168.1.16"
-            )
+                putExtra(
+                    AudioPlaybackService.EXTRA_IP,
+                    ip
+                )
 
-        }
+            }
 
         ContextCompat.startForegroundService(
             this,
@@ -90,15 +126,16 @@ class MainActivity : ComponentActivity() {
 
     private fun stopReceiver() {
 
-        val intent = Intent(
-            this,
-            AudioPlaybackService::class.java
-        ).apply {
+        val intent =
+            Intent(
+                this,
+                AudioPlaybackService::class.java
+            ).apply {
 
-            action =
-                AudioPlaybackService.ACTION_DISCONNECT
+                action =
+                    AudioPlaybackService.ACTION_DISCONNECT
 
-        }
+            }
 
         startService(intent)
 
@@ -109,10 +146,13 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33) {
 
             requestPermissions(
+
                 arrayOf(
                     Manifest.permission.POST_NOTIFICATIONS
                 ),
+
                 100
+
             )
 
         }
