@@ -1,98 +1,117 @@
 ![Architecture](architecture.png)
 
-# 📺 Sound Transmitter TV
+# 📱 SonicBridge Receiver
 
-> Transform your Android TV into a low-latency wireless audio transmitter.
+> Listen to your Android TV audio wirelessly with ultra-low latency.
 
-**Sound Transmitter TV** captures system audio directly from your Android TV using Android's **Audio Playback Capture API** and streams it over Wi-Fi in real time to another device.
+**SonicBridge Receiver** is the Android companion application for **SonicBridge TV**. It connects to your Android TV over your local Wi-Fi network, receives real-time PCM audio through WebSockets, and plays it with extremely low latency using Android's `AudioTrack`.
 
-Perfect for watching TV privately with headphones connected to your phone, reducing audio delay compared to Bluetooth, or building custom wireless audio solutions.
+Perfect for private TV watching with wired or Bluetooth headphones without disturbing others.
 
 ---
 
 ## ✨ Features
 
-* 🎵 Real-time TV audio streaming
-* 🎧 Stereo PCM (16-bit)
-* ⚡ Low latency streaming
-* 📡 Built-in WebSocket server
-* 📺 Android TV optimized UI (Jetpack Compose for TV)
-* 🔊 Captures system audio using MediaProjection
-* 🚀 Lightweight foreground service
-* 🌐 Works entirely over your local Wi-Fi network
+- 📡 Connects to SonicBridge TV over Wi-Fi
+- 🎧 Ultra-low latency audio playback
+- 🔊 Stereo PCM (48 kHz, 16-bit)
+- ⚡ Real-time WebSocket streaming
+- 🎵 Native AudioTrack playback
+- 🔄 Foreground playback service
+- 📱 Modern Jetpack Compose UI
+- 🌙 Lightweight and battery efficient
 
 ---
 
-## 📸 Overview
+## 📸 Architecture
 
 ```
 Android TV
-     │
-     ▼
+      │
 Audio Playback Capture
-     │
-     ▼
-WebSocket Server
-     │
-══════════ Wi-Fi ══════════
-     │
-     ▼
-Browser / Android Receiver
-     │
-     ▼
+      │
+Raw PCM Audio
+      │
+WebSocket
+═════════ Wi-Fi ═════════
+      │
+SonicBridge Receiver
+      │
+AudioTrack
+      │
 Headphones / Speakers
 ```
 
 ---
 
+## 🚀 Features
+
+✅ Ultra-low latency streaming
+
+✅ Stereo 48 kHz PCM playback
+
+✅ Connect to any Android TV running SonicBridge TV
+
+✅ Connection status monitoring
+
+✅ Live transfer statistics
+
+✅ Bytes received counter
+
+✅ Foreground playback notification
+
+---
+
 ## 🛠 Tech Stack
 
-* Kotlin
-* Jetpack Compose for TV
-* Ktor WebSocket Server
-* AudioPlaybackCapture API
-* MediaProjection API
-* AudioRecord
-* Coroutines
-* Material 3 TV
+- Kotlin
+- Jetpack Compose
+- Ktor WebSocket Client
+- AudioTrack API
+- Foreground Service
+- Coroutines
+- Material 3
 
 ---
 
 ## 📦 Requirements
 
-* Android TV (Android 10 / API 29 or above)
-* Local Wi-Fi Network
-* Browser or Android Receiver connected to the same network
+- Android 8.0 (API 26+) or later
+- SonicBridge TV installed on an Android TV
+- Both devices connected to the same Wi-Fi network
 
 ---
 
 ## 🚀 Getting Started
 
-### 1. Clone the repository
+### Clone the repository
 
 ```bash
-git clone https://github.com/noncoderf/Wifi-Sound-Transmitter-TV-App.git
+git clone https://github.com/noncoderf/SonicBridge.git
 ```
 
-### 2. Open with Android Studio
+### Open in Android Studio
 
-Use the latest stable version of Android Studio.
+Open using the latest stable version of Android Studio.
 
-### 3. Run on Android TV
+### Build & Install
 
-Install the application on your Android TV device.
+Run the application on your Android phone.
 
-### 4. Start Streaming
+### Connect
 
-Press **Start Transmitting**.
-
-Grant the required MediaProjection permission.
-
-The TV will begin capturing playback audio.
+1. Launch SonicBridge TV.
+2. Start audio transmission.
+3. Open SonicBridge Receiver.
+4. Enter your TV IP address.
+5. Tap **Connect**.
+6. Enjoy real-time TV audio.
 
 ---
 
-## 🌐 WebSocket Endpoint
+## 📡 Communication
+
+The receiver connects to:
 
 ```
 ws://<TV-IP>:8080/audio
@@ -104,78 +123,72 @@ Example
 ws://192.168.1.16:8080/audio
 ```
 
-Binary frames contain raw PCM audio.
-
 ---
 
 ## 🎼 Audio Format
 
-| Property    | Value      |
-| ----------- | ---------- |
-| Sample Rate | 48,000 Hz  |
-| Channels    | Stereo     |
-| Encoding    | PCM 16-bit |
-| Transport   | WebSocket  |
+| Property | Value |
+|----------|------|
+| Sample Rate | 48,000 Hz |
+| Channels | Stereo |
+| Encoding | PCM 16-bit |
+| Protocol | WebSocket |
 
 ---
 
-## 📱 Planned Android Receiver
+## 📊 Current Features
 
-An Android companion application is currently under development.
-
-Features planned:
-
-* Automatic TV discovery
-* Low latency AudioTrack playback
-* Auto reconnect
-* Background playback
-* Bluetooth headset support
-* Connection quality indicator
-* Latency statistics
-
----
-
-## 🚀 Future Roadmap
-
-* ✅ Android Receiver App
-* ✅ Automatic TV Discovery (mDNS)
-* ✅ Multiple Receiver Support
-* ⏳ Opus Audio Codec
-* ⏳ Adaptive Jitter Buffer
-* ⏳ AES Encrypted Streaming
-* ⏳ Lip Sync Calibration
-* ⏳ Volume Synchronization
-* ⏳ Multi-room Audio
+| Feature | Status |
+|----------|--------|
+| WebSocket Client | ✅ |
+| AudioTrack Playback | ✅ |
+| Stereo Audio | ✅ |
+| Ultra-low Latency | ✅ |
+| Foreground Service | ✅ |
+| Live Statistics | ✅ |
+| TV IP Setup | ✅ |
+| Auto Discovery | 🚧 Planned |
+| QR Pairing | 🚧 Planned |
 
 ---
 
-## 📈 Current Status
+## 🚀 Roadmap
 
-| Feature                | Status     |
-| ---------------------- | ---------- |
-| Audio Playback Capture | ✅          |
-| Real-time Streaming    | ✅          |
-| Stereo Audio           | ✅          |
-| Low Latency            | ✅          |
-| Browser Receiver       | ✅          |
-| Android Receiver       | 🚧         |
-| Opus Compression       | 📅 Planned |
+- 🔍 Automatic TV Discovery (mDNS)
+- 📷 QR Code Pairing
+- 🎚 Volume Controls
+- 🎛 Audio Equalizer
+- 🔒 Secure Pairing
+- 🎧 Bluetooth Audio Optimization
+- 📈 Connection Quality Indicator
+- 🎵 Optional Opus Codec
+- 📡 Multiple TV Profiles
 
 ---
 
 ## ⚠ Limitations
 
-* Requires Android 10+ for Audio Playback Capture.
-* Some applications may prevent playback capture for security reasons.
-* Both devices must be connected to the same Wi-Fi network.
+- Requires SonicBridge TV running on Android TV.
+- Both devices must be on the same local Wi-Fi network.
+- Audio quality depends on network stability.
+
+---
+
+## 📺 Companion TV App
+
+The Android TV transmitter application is available here:
+
+**SonicBridge TV**
+
+https://github.com/noncoderf/Wifi-Sound-Transmitter-TV-App
 
 ---
 
 ## 🤝 Contributing
 
-Contributions, feature requests, and bug reports are always welcome.
+Contributions, issues, and feature requests are welcome!
 
-Feel free to open an issue or submit a pull request.
+Feel free to fork the project and submit a pull request.
 
 ---
 
@@ -191,9 +204,9 @@ This project is licensed under the MIT License.
 
 Senior Android Developer
 
-* GitHub: https://github.com/noncoderf
-* LinkedIn: https://linkedin.com/in/nizamuddin007
+- GitHub: https://github.com/noncoderf
+- LinkedIn: https://linkedin.com/in/nizamuddin007
 
 ---
 
-⭐ If you found this project interesting, consider giving it a star!
+⭐ If you found this project useful, consider giving it a **Star**!
