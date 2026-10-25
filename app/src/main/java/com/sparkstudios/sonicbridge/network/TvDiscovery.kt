@@ -25,9 +25,12 @@ data class TvDevice(
 
 class TvDiscovery(private val context: Context) {
 
-    private val client = HttpClient(CIO) { install(WebSockets) }
-
-    suspend fun scan(onFound: suspend (TvDevice) -> Unit = {}): List<TvDevice> = withContext(Dispatchers.IO) {
+    suspend fun scan(onFound: suspend (TvDevice) -> Unit = {}): List<TvDevice> {
+        // Use a new client for every scan so a previous WebSocket session
+        // cannot affect a manual refresh.
+        val client = HttpClient(CIO) { install(WebSockets) }
+        return try {
+            withContext(Dispatchers.IO) {
         var localIp: String? = null
         repeat(5) {
             localIp = localIpv4()
@@ -41,19 +44,33 @@ class TvDiscovery(private val context: Context) {
             .filter { it != resolvedIp }
 
         coroutineScope {
-            candidates.chunked(32).flatMap { batch ->
-                batch.map { ip ->
+            val devices = mutableListOf<TvDevice>()
+            for (batch in candidates.chunked(32)) {
+                val foundInBatch = batch.map { ip ->
                     async {
-                        if (isSonicBridgeTv(ip)) {
-                            TvDevice(ip).also { onFound(it) }
-                        } else null
+                        if (isSonicBridgeTv(ip, client)) TvDevice(ip) else null
                     }
                 }.awaitAll().filterNotNull()
+
+                foundInBatch.forEach {
+                    devices += it
+                    onFound(it)
+                }
+
+                // A compatible TV was found; do not probe the remaining
+                // subnet batches. The current batch is allowed to finish so
+                // the scan coroutine completes normally.
+                if (foundInBatch.isNotEmpty()) break
             }
+            devices
+        }
+            }
+        } finally {
+            client.close()
         }
     }
 
-    private suspend fun isSonicBridgeTv(ip: String): Boolean =
+    private suspend fun isSonicBridgeTv(ip: String, client: HttpClient): Boolean =
         withTimeoutOrNull(1500) {
             if (!isPortOpen(ip)) return@withTimeoutOrNull false
 
@@ -94,5 +111,5 @@ class TvDiscovery(private val context: Context) {
             .firstOrNull { !it.startsWith("127.") }
     }
 
-    fun close() = client.close()
+    fun close() = Unit
 }

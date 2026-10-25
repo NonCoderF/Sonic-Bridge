@@ -26,6 +26,7 @@ import com.sparkstudios.sonicbridge.ui.IpSetupScreen
 import com.sparkstudios.sonicbridge.ui.MainViewModel
 import com.sparkstudios.sonicbridge.ui.TvDiscoveryViewModel
 import com.sparkstudios.sonicbridge.ui.theme.SonicBridgeTheme
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
 
@@ -54,9 +55,27 @@ class MainActivity : ComponentActivity() {
 
                     var tvIp by remember { mutableStateOf(Prefs.getTvIp(this@MainActivity)) }
                     var showManualSetup by remember { mutableStateOf(false) }
+                    var discoveryRestartKey by remember { mutableIntStateOf(0) }
 
                     LaunchedEffect(tvIp) {
-                        if (tvIp.isNotBlank()) PlaybackStateRepository.updateServerIp(tvIp)
+                        if (tvIp.isNotBlank()) {
+                            PlaybackStateRepository.updateServerIp(tvIp)
+                            if (!uiState.isConnected && !uiState.isConnecting) {
+                                startReceiver(tvIp)
+                            }
+                        }
+                    }
+
+                    LaunchedEffect(tvIp, showManualSetup, discoveryRestartKey) {
+                        if (tvIp.isBlank() && !showManualSetup) {
+                            if (uiState.isConnected || uiState.isConnecting) {
+                                stopReceiver()
+                                // Let the previous audio WebSocket close before
+                                // probing the TV again.
+                                delay(750)
+                            }
+                            tvDiscoveryViewModel.scan()
+                        }
                     }
 
                     if (tvIp.isBlank()) {
@@ -69,7 +88,7 @@ class MainActivity : ComponentActivity() {
                         } else {
                             AvailableTvsScreen(
                                 state = discoveryState,
-                                onRefresh = tvDiscoveryViewModel::scan,
+                                onRefresh = { discoveryRestartKey++ },
                                 onSelect = { device ->
                                     Prefs.selectTv(this@MainActivity, device.ip)
                                     PlaybackStateRepository.updateServerIp(device.ip)

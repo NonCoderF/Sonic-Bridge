@@ -58,7 +58,7 @@ fun ConnectButton(
 
         Box(
             modifier = Modifier
-                .size(170.dp)
+                .size(128.dp)
                 .scale(pulse)
                 .background(
                     color = if (isConnected)
@@ -68,7 +68,7 @@ fun ConnectButton(
                     shape = CircleShape
                 )
                 .border(
-                    4.dp,
+                    3.dp,
                     Color.White.copy(alpha = .25f),
                     CircleShape
                 )
@@ -89,7 +89,7 @@ fun ConnectButton(
                         imageVector = Icons.Rounded.Check,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(70.dp)
+                        modifier = Modifier.size(52.dp)
                     )
 
                 } else {
@@ -98,7 +98,7 @@ fun ConnectButton(
                         imageVector = Icons.Rounded.PlayArrow,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(70.dp)
+                        modifier = Modifier.size(52.dp)
                     )
 
                 }
@@ -108,7 +108,7 @@ fun ConnectButton(
         }
 
         Spacer(
-            modifier = Modifier.height(20.dp)
+            modifier = Modifier.height(15.dp)
         )
 
         Text(

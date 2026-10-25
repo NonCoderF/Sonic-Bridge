@@ -21,6 +21,7 @@ data class TvDiscoveryUiState(
 
 class TvDiscoveryViewModel(application: Application) : AndroidViewModel(application) {
     private val discovery = TvDiscovery(application)
+    private var scanJob: kotlinx.coroutines.Job? = null
     private val _uiState = MutableStateFlow(TvDiscoveryUiState(isScanning = false))
     val uiState: StateFlow<TvDiscoveryUiState> = _uiState.asStateFlow()
 
@@ -40,20 +41,27 @@ class TvDiscoveryViewModel(application: Application) : AndroidViewModel(applicat
 
     fun scan() {
         if (_uiState.value.isScanning) return
-        _uiState.value = _uiState.value.copy(isScanning = true, error = null)
-        viewModelScope.launch {
-            runCatching {
-                discovery.scan { device ->
+
+        // Refresh always starts from a clean discovery session.
+        scanJob?.cancel()
+        _uiState.value = TvDiscoveryUiState(isScanning = true)
+        scanJob = viewModelScope.launch {
+            try {
+                val devices = discovery.scan { device ->
                     _uiState.update { state ->
                         if (state.devices.any { it.ip == device.ip }) state
                         else state.copy(devices = state.devices + device)
                     }
                 }
+                _uiState.value = TvDiscoveryUiState(false, devices)
+            } catch (_: Exception) {
+                _uiState.value = TvDiscoveryUiState(false, error = "Could not scan this network")
             }
-                .onSuccess { _uiState.value = TvDiscoveryUiState(false, it) }
-                .onFailure { _uiState.value = TvDiscoveryUiState(false, error = "Could not scan this network") }
         }
     }
 
-    override fun onCleared() { discovery.close() }
+    override fun onCleared() {
+        scanJob?.cancel()
+        discovery.close()
+    }
 }
