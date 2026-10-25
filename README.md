@@ -192,6 +192,35 @@ only on a trusted local network.
 
 https://github.com/noncoderf/Wifi-Sound-Transmitter-TV-App
 
+## Browser receiver on Vercel
+
+The browser receiver connects directly from the hosted page to the TV:
+
+```text
+https://your-vercel-domain.example  →  ws://<TV-IP>:8080/audio
+```
+
+Vercel does not proxy or receive the audio stream. The browser and TV must be
+on the same reachable local network, and the TV must be actively transmitting.
+
+The page includes a `connect-src` policy allowing WebSocket connections, but a
+Vercel response-header CSP can still override or tighten the HTML policy.
+
+Current Chromium releases may show a Local Network Access permission prompt.
+Choose **Allow** when the browser asks to find and connect to devices on the
+local network. A denied permission must be changed in the browser's site
+settings; page JavaScript cannot bypass it.
+
+Firefox and Safari may block or restrict `ws://` connections from an HTTPS
+page, and their Local Network Access permission behavior is not equivalent to
+Chromium. Use a current Chromium browser or the native Android receiver when
+direct browser access is unavailable.
+
+Common causes of failure are an incorrect TV IP, the TV transmitter not being
+started, Wi-Fi client isolation, different Wi-Fi networks, or a firewall
+blocking port `8080`. The TV endpoint is intentionally unencrypted and local;
+it is not exposed publicly.
+
 ## License
 
 This project is licensed under the MIT License.
@@ -202,4 +231,3 @@ This project is licensed under the MIT License.
 
 - GitHub: https://github.com/noncoderf
 - LinkedIn: https://linkedin.com/in/nizamuddin007
-
