@@ -203,6 +203,11 @@ https://your-vercel-domain.example  →  ws://<TV-IP>:8080/audio
 Vercel does not proxy or receive the audio stream. The browser and TV must be
 on the same reachable local network, and the TV must be actively transmitting.
 
+The browser flow uses manual TV IP entry. Enter the address shown by the TV,
+choose **Use TV IP**, then press **Connect**. Hosted browser subnet scanning is
+not used as the primary flow because browsers restrict large-scale local
+network probing.
+
 The page includes a `connect-src` policy allowing WebSocket connections, but a
 Vercel response-header CSP can still override or tighten the HTML policy.
 
