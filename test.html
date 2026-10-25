@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SonicBridge Waveform</title>
+<style>
+body{margin:0;background:#10131b;color:#f2f4fa;font:16px system-ui;display:grid;place-items:center;min-height:100vh}main{width:min(850px,92vw)}h1{font-size:24px}canvas{width:100%;height:230px;background:#191f2b;border-radius:14px}button{border:0;border-radius:8px;background:#63e6be;color:#10131b;padding:12px 20px;font-weight:700;cursor:pointer}button:disabled{opacity:.5}p{color:#aeb9ca;line-height:1.5}#status{margin-left:12px}
+</style>
+</head>
+<body><main><h1>SonicBridge — Live Audio Waveform</h1><canvas id="wave"></canvas><p><button id="start">Capture audio</button> <button id="stop" disabled>Stop</button><span id="status">Idle</span></p><p>In Chrome or Edge, choose a tab playing music and enable <b>Share tab audio</b>. This only visualizes audio; it does not play it back.</p></main>
+<script>
+const canvas=document.querySelector('#wave'),ctx=canvas.getContext('2d');
+const start=document.querySelector('#start'),stop=document.querySelector('#stop'),status=document.querySelector('#status');
+let stream, audioContext, analyser, source, frame;
+function draw(){
+ const w=canvas.width=canvas.clientWidth*devicePixelRatio,h=canvas.height=canvas.clientHeight*devicePixelRatio;
+ const data=new Uint8Array(analyser.fftSize);analyser.getByteTimeDomainData(data);
+ ctx.fillStyle='#191f2b';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#63e6be';ctx.lineWidthhing in t=2*devicePixelRatio;ctx.beginPath();
+ for(let i=0;i<data.length;i++){const x=i*w/(data.length-1),y=data[i]/255*h;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke();frame=requestAnimationFrame(draw);
+}
+async function cleanup(){cancelAnimationFrame(frame);if(stream)stream.getTracks().forEach(t=>t.stop());if(source)source.disconnect();if(audioContext)await audioContext.close();stream=null;source=null;audioContext=null;start.disabled=false;stop.disabled=true;status.textContent='Stopped';}
+start.onclick=async()=>{try{
+ stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+ if(!stream.getAudioTracks().length){status.textContent='No audio shared. Enable Share tab audio.';await cleanup();status.textContent='No audio shared. Enable Share tab audio.';return;}
+ audioContext=new AudioContext();analyser=audioContext.createAnalyser();analyser.fftSize=2048;
+ source=audioContext.createMediaStreamSource(stream);source.connect(analyser);
+ stream.getVideoTracks()[0]?.addEventListener('ended',cleanup,{once:true});start.disabled=true;stop.disabled=false;status.textContent='Capturing';draw();
+ }catch(e){status.textContent=e.message;await cleanup();status.textContent=e.message;}};
+stop.onclick=cleanup;
+</script></body></html>

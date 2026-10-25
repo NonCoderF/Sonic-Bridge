@@ -259,6 +259,8 @@ class AudioPlaybackService : Service() {
 
         socketClient.onAudioReceived = { audio ->
 
+            PlaybackStateRepository.updateWaveform(audio)
+
             audioPlayer.playAudio(audio)
 
         }

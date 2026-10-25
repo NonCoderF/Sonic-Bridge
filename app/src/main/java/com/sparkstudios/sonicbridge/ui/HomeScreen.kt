@@ -90,7 +90,9 @@ fun HomeScreen(
 
                 latency = uiState.latency,
 
-                audioFormat = uiState.audioFormat
+                audioFormat = uiState.audioFormat,
+
+                waveform = uiState.waveform
 
             )
 

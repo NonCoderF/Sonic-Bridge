@@ -1,10 +1,13 @@
 package com.sparkstudios.sonicbridge.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,10 +22,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
 
 @Composable
 fun StatusCard(
@@ -37,7 +45,9 @@ fun StatusCard(
 
     latency: Int,
 
-    audioFormat: String
+    audioFormat: String,
+
+    waveform: List<Float>
 
 ) {
 
@@ -72,6 +82,8 @@ fun StatusCard(
                 color = Color.White
 
             )
+
+            Waveform(isActive = isConnected, amplitudes = waveform)
 
             HorizontalDivider()
 
@@ -292,3 +304,47 @@ private fun formatBytes(bytes: Long): String {
     }
 
 }
+
+@Composable
+private fun Waveform(isActive: Boolean, amplitudes: List<Float>) {
+    val animatedAmplitudes = amplitudes.map { amplitude ->
+        animateFloatAsState(
+            targetValue = if (isActive) amplitude.coerceIn(0f, 1f) else 0.02f,
+            animationSpec = tween(16, easing = LinearEasing),
+            label = "waveform-bar"
+        ).value
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(184.dp)
+            .background(Color(0xFF101722), RoundedCornerShape(16.dp))
+    ) {
+        Canvas(Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 16.dp)) {
+            val bars = thirtyTwo
+            val gap = 4.dp.toPx()
+            val barWidth = (size.width - gap * (bars - 1)) / bars
+            val center = size.height / 2f
+            for (index in 0 until bars) {
+                val wave = animatedAmplitudes.getOrNull(index) ?: 0.02f
+                val visualWave = wave.coerceIn(0.02f, 1f)
+                val height = size.height * (0.02f + visualWave * 0.98f)
+                val intensity = visualWave.coerceIn(0f, 1f)
+                val barColor = if (intensity < 0.5f) {
+                    lerp(Color(0xFF00E676), Color(0xFFFFD600), intensity * 2f)
+                } else {
+                    lerp(Color(0xFFFFD600), Color(0xFFFF1744), (intensity - 0.5f) * 2f)
+                }
+                drawRoundRect(
+                    color = if (isActive) barColor else Color(0xFF455067),
+                    topLeft = androidx.compose.ui.geometry.Offset(index * (barWidth + gap), center - height / 2),
+                    size = androidx.compose.ui.geometry.Size(barWidth, height),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth, barWidth)
+                )
+            }
+        }
+    }
+}
+
+private const val thirtyTwo = 32

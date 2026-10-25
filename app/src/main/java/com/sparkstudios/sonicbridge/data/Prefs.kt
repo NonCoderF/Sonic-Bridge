@@ -26,6 +26,13 @@ object Prefs {
 
     }
 
+    fun selectTv(context: Context, ip: String) {
+        prefs(context).edit()
+            .clear()
+            .putString(KEY_TV_IP, ip)
+            .apply()
+    }
+
     fun getTvIp(
         context: Context
     ): String {

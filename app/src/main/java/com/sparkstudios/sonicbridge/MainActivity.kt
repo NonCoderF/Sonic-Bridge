@@ -9,18 +9,28 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.background
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sparkstudios.sonicbridge.data.Prefs
+import com.sparkstudios.sonicbridge.data.PlaybackStateRepository
 import com.sparkstudios.sonicbridge.service.AudioPlaybackService
 import com.sparkstudios.sonicbridge.ui.HomeScreen
+import com.sparkstudios.sonicbridge.ui.AvailableTvsScreen
 import com.sparkstudios.sonicbridge.ui.IpSetupScreen
 import com.sparkstudios.sonicbridge.ui.MainViewModel
+import com.sparkstudios.sonicbridge.ui.TvDiscoveryViewModel
 import com.sparkstudios.sonicbridge.ui.theme.SonicBridgeTheme
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel by viewModels<MainViewModel>()
+    private val tvDiscoveryViewModel by viewModels<TvDiscoveryViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -33,64 +43,55 @@ class MainActivity : ComponentActivity() {
         setContent {
 
             SonicBridgeTheme {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF0B0F17))
+                        .safeDrawingPadding()
+                ) {
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                    val discoveryState by tvDiscoveryViewModel.uiState.collectAsStateWithLifecycle()
 
-                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                    var tvIp by remember { mutableStateOf(Prefs.getTvIp(this@MainActivity)) }
+                    var showManualSetup by remember { mutableStateOf(false) }
 
-                var tvIp by remember {
+                    LaunchedEffect(tvIp) {
+                        if (tvIp.isNotBlank()) PlaybackStateRepository.updateServerIp(tvIp)
+                    }
 
-                    mutableStateOf(
-                        Prefs.getTvIp(this)
-                    )
-
-                }
-
-                if (tvIp.isBlank()) {
-
-                    IpSetupScreen(
-
-                        onContinue = { ip ->
-
-                            Prefs.saveTvIp(
-                                this,
-                                ip
+                    if (tvIp.isBlank()) {
+                        if (showManualSetup) {
+                            IpSetupScreen(onContinue = { ip ->
+                                Prefs.selectTv(this@MainActivity, ip)
+                                PlaybackStateRepository.updateServerIp(ip)
+                                tvIp = ip
+                            })
+                        } else {
+                            AvailableTvsScreen(
+                                state = discoveryState,
+                                onRefresh = tvDiscoveryViewModel::scan,
+                                onSelect = { device ->
+                                    Prefs.selectTv(this@MainActivity, device.ip)
+                                    PlaybackStateRepository.updateServerIp(device.ip)
+                                    tvIp = device.ip
+                                },
+                                onManualIp = { showManualSetup = true }
                             )
-
-                            tvIp = ip
-
                         }
-
-                    )
-
-                } else {
-
-                    HomeScreen(
-
-                        uiState = uiState,
-
-                        onConnectClick = {
-
-                            if (uiState.isConnected) {
-
-                                stopReceiver()
-
-                            } else {
-
-                                startReceiver(tvIp)
-
+                    } else {
+                        HomeScreen(
+                            uiState = uiState,
+                            onConnectClick = {
+                                if (uiState.isConnected) stopReceiver() else startReceiver(tvIp)
+                            },
+                            onChangeTv = {
+                                Prefs.clearTvIp(this@MainActivity)
+                                tvIp = ""
+                                showManualSetup = false
+                                tvDiscoveryViewModel.scan()
                             }
-
-                        },
-
-                        onChangeTv = {
-
-                            Prefs.clearTvIp(this)
-
-                            tvIp = ""
-
-                        }
-
-                    )
-
+                        )
+                    }
                 }
 
             }
